@@ -35,7 +35,7 @@ Once it has all four pages, it runs OCR over each one locally. OCR is never perf
 
 ## More modes are coming
 
-Right now Pulse only tracks the Campaign, since that's where the nearly 200 hours went and where the tracking started. Sektori has other modes too (Classic, and more), and the dashboard already has a spot reserved for them: there's a grayed-out Classic tab sitting in the nav. Turning that into a real tracker, and adding the modes after it, is next.
+Right now Pulse only tracks the Campaign. Classic is next, already sitting in the nav as a grayed-out tab, and more modes will follow.
 
 ## Installing
 

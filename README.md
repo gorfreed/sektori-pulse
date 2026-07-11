@@ -23,6 +23,16 @@ Pulse runs alongside Sektori and picks up the moment a run ends.
 
 Pulse reads the Sektori save file without ever modifying it. Nothing leaves your machine.
 
+## How it works (and why it has to work this way)
+
+Sektori's save file only stores lifetime totals and personal bests, things like total enemies destroyed across your whole career, or your single best score ever. It does not store anything about an individual run. Once you leave the results screen, the numbers on it are gone for good, and there is no file, no log, and no API that keeps them anywhere. If you want per-run history, the only place that data ever exists is on screen, for a few seconds, right after a run ends.
+
+So Pulse reads it the same way a person would: it looks at the screen.
+
+That comes with its own problems. The results screen is actually four separate pages (Campaign Challenge, two Statistics pages, and the Score Breakdown), and the game only cycles between them on controller input, not keyboard. Pulse gets around that by plugging in a virtual Xbox controller (via ViGEm) the moment it detects you're on the results screen, then pages through all four automatically so you never have to touch anything.
+
+Once it has all four pages, it runs OCR over each one locally. OCR is never perfect, and a single misread digit would quietly corrupt your history. To catch that, Pulse also reads the score breakdown (enemies, bosses, tokens, chain, pads, other) and checks that those numbers actually add up to the total score shown. If they don't, it tries alternate readings of the misread digits until it finds a combination that does add up, and only then records the run. A run that still doesn't check out is flagged rather than silently trusted.
+
 ## More modes are coming
 
 Right now Pulse only tracks the Campaign, since that's where the nearly 200 hours went and where the tracking started. Sektori has other modes too (Classic, and more), and the dashboard already has a spot reserved for them: there's a grayed-out Classic tab sitting in the nav. Turning that into a real tracker, and adding the modes after it, is next.

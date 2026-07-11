@@ -35,7 +35,7 @@ Once it has all four pages, it runs OCR over each one locally. OCR is never perf
 
 ## More modes are coming
 
-Right now Pulse only tracks the Campaign. Classic is next, already sitting in the nav as a grayed-out tab, and more modes will follow.
+Right now Pulse only tracks the Campaign. I'm currently thinking about adding an additional tracker sectionn for the Classic mode.
 
 ## Installing
 

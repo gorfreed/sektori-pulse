@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: 'Oxanium';
+    font-weight: 600;
+    src: url('../node_modules/@fontsource/oxanium/files/oxanium-latin-600-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Oxanium';
+    font-weight: 700;
+    src: url('../node_modules/@fontsource/oxanium/files/oxanium-latin-700-normal.woff2') format('woff2');
+  }
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+  /* Same material as the dashboard's own panels: dark gradient card, thin
+     border, a short angled accent bar in the corner, small triangle glyph —
+     reads as part of Sektori's own UI instead of a generic dev overlay. */
+  #pill {
+    position: relative;
+    font-family: 'Oxanium', 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: #c7d1d7;
+    background: linear-gradient(180deg, rgba(9, 15, 22, .93), rgba(4, 8, 12, .93));
+    border: 1px solid #34414a;
+    padding: 7px 13px 7px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    -webkit-app-region: drag;
+    text-transform: uppercase;
+  }
+  #pill:before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: -1px;
+    width: 22px;
+    height: 2px;
+    background: #ff3154;
+  }
+  #tri { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 6px solid #ff3154; flex: none; margin-top: 1px; }
+  #label { color: #eef4f8; }
+  /* checking is calm (fires on every save write, including mid-run saves);
+     capturing must be impossible to miss: the player has to hold on the
+     results screen only until the page screenshots are taken. */
+  #pill.checking #tri { border-top-color: #ffdc2e; animation: pulse .6s ease-in-out infinite; }
+  #pill.checking:before { background: #ffdc2e; }
+  #pill.capturing {
+    border-color: #6b5814;
+    color: #fff;
+    font-weight: 700;
+    animation: attention .5s ease-in-out infinite alternate;
+  }
+  #pill.capturing:before { background: #ffdc2e; width: 100%; height: 2px; }
+  #pill.capturing #tri { border-top-color: #ffdc2e; animation: pulse .45s ease-in-out infinite; }
+  #pill.processing:before { background: #2ce7ef; }
+  #pill.processing #tri { border-top-color: #2ce7ef; animation: pulse 1.2s ease-in-out infinite; }
+  #pill.captured { border-color: #1f4a28; background: linear-gradient(180deg, rgba(8, 26, 12, .93), rgba(4, 12, 6, .93)); }
+  #pill.captured:before { background: #72f35a; }
+  #pill.captured #tri { border-top-color: #72f35a; }
+  #pill.error:before { background: #ff3154; }
+  #pill.error #tri { border-top-color: #ff3154; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+  @keyframes attention {
+    from { box-shadow: 0 0 0 rgba(255, 220, 46, 0); }
+    to { box-shadow: 0 0 14px rgba(255, 220, 46, .55); }
+  }
+</style>
+</head>
+<body>
+  <div id="pill" class="idle"><i id="tri"></i><span id="label">WATCHING</span></div>
+  <script>
+    const { ipcRenderer } = require('electron')
+    const pill = document.getElementById('pill')
+    const label = document.getElementById('label')
+
+    let audioContext = null
+    function tone(frequency, durationSec, { endFrequency, volume = 0.22, delaySec = 0 } = {}) {
+      if (!audioContext) audioContext = new AudioContext()
+      const start = audioContext.currentTime + delaySec
+      const osc = audioContext.createOscillator()
+      const gain = audioContext.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(frequency, start)
+      if (endFrequency) osc.frequency.exponentialRampToValueAtTime(endFrequency, start + durationSec)
+      gain.gain.setValueAtTime(0.0001, start)
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.015)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + durationSec)
+      osc.connect(gain).connect(audioContext.destination)
+      osc.start(start)
+      osc.stop(start + durationSec + 0.05)
+    }
+    // Quick rising "bing" when a capture starts.
+    const playBing = () => { tone(880, 0.12); tone(1320, 0.15, { delaySec: 0.1 }) }
+    // Three-note major arpeggio resolving upward (C5-E5-G5) — a clean,
+    // unambiguous "done, and it worked" cue. A falling tone reads as an error
+    // even when it's meant to mean success, so success never descends here.
+    const playSuccess = () => {
+      tone(523.25, 0.14, { volume: 0.22 })
+      tone(659.25, 0.14, { volume: 0.24, delaySec: 0.12 })
+      tone(784.0, 0.34, { volume: 0.3, delaySec: 0.24 })
+    }
+    // Falling tone reserved for actual failures — this is the only place a
+    // descending pitch is used, so it stays a reliable "something went wrong" cue.
+    const playError = () => tone(420, 0.4, { endFrequency: 260, volume: 0.26 })
+
+    // Bing only when a confirmed results-screen capture starts ("capturing"),
+    // not on every save write ("checking" also fires for mid-run saves that
+    // get skipped). Success chime only once the run record is actually
+    // written ("captured") — if the player leaves the results screen early
+    // and capture aborts back to idle/error without a record, that's a fail,
+    // not a success.
+    let lastPhase = 'idle'
+    let binged = false
+    ipcRenderer.on('overlay:state', (_event, state) => {
+      pill.className = state.phase
+      label.textContent = state.text.replace(/^PULSE\s*·\s*/, '')
+      if (state.phase === 'capturing' && !binged) { playBing(); binged = true }
+      if (state.phase === 'captured' && lastPhase !== 'captured') playSuccess()
+      if (binged && (state.phase === 'idle' || state.phase === 'error') && lastPhase !== 'idle' && lastPhase !== 'error') playError()
+      if (state.phase === 'idle' || state.phase === 'captured' || state.phase === 'error') binged = false
+      lastPhase = state.phase
+    })
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{
+  "name": "sektori-pulse",
+  "version": "0.1.1",
+  "private": true,
+  "description": "A local-first performance companion for Sektori.",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "electron:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "dist": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "jimp": "^1.6.1",
+    "tesseract.js": "^7.0.0",
+    "vigemclient": "^1.5.3"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "latest",
+    "@eslint/js": "latest",
+    "@fontsource/barlow-condensed": "latest",
+    "@fontsource/oxanium": "latest",
+    "@vitejs/plugin-react": "latest",
+    "concurrently": "latest",
+    "electron": "latest",
+    "electron-builder": "latest",
+    "eslint": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-refresh": "latest",
+    "lucide-react": "latest",
+    "playwright": "^1.61.0",
+    "rcedit": "^5.0.2",
+    "react": "latest",
+    "react-dom": "latest",
+    "vite": "latest",
+    "vitest": "latest",
+    "wait-on": "latest"
+  },
+  "build": {
+    "appId": "com.sektoripulse.app",
+    "productName": "Sektori Pulse",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "node_modules/**/*",
+      "assets/icon.ico",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

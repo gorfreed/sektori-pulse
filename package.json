@@ -2,7 +2,7 @@
   "name": "sektori-pulse",
   "version": "0.1.1",
   "private": true,
-  "description": "A local-first performance companion for Sektori.",
+  "description": "Sektori Pulse - Performance Tracker: a local-first performance tracker and companion app for the game Sektori.",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {

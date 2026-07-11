@@ -1,6 +1,6 @@
-# Sektori // Pulse
+# Sektori Pulse - Performance Tracker
 
-**A performance companion for Sektori. Your runs deserve better than a leaderboard number.**
+**A performance tracker and companion app for the game Sektori. Your runs deserve better than a leaderboard number.**
 
 ![Sektori Pulse dashboard](assets/dashboard-screenshot.png)
 

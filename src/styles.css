@@ -32,11 +32,13 @@
 .deck-chip,.deck-toggle{position:relative;border:1.5px solid var(--cyan);background:linear-gradient(180deg,rgba(8,20,26,.9),rgba(4,10,14,.9));color:var(--cyan);font:600 10px Oxanium;letter-spacing:.06em;text-transform:uppercase;text-align:center}
 .deck-chip:before,.deck-toggle:before{content:"";position:absolute;top:-1.5px;left:50%;transform:translate(-50%,-100%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--cyan)}
 .deck-chip{padding:7px 12px;display:inline-block}
-.deck-picker{padding:8px 0 10px;display:flex;flex-direction:column;gap:10px}
-.deck-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 6px;padding-top:8px}
-.deck-toggle{padding:12px 4px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.deck-toggle:hover{background:rgba(44,231,239,.08)}
-.deck-toggle.active,.deck-chip{border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 8px rgba(255,220,46,.3)}
+.deck-picker-backdrop{position:fixed;inset:0;background:rgba(3,7,12,.82);backdrop-filter:blur(2px);z-index:60;display:flex;align-items:center;justify-content:center;padding:32px}
+.deck-picker{background:linear-gradient(180deg,#0b1720,#050b11);border:1px solid #34414a;box-shadow:0 24px 70px rgba(0,0,0,.65);padding:30px 34px 24px;width:min(760px,100%);max-height:88vh;overflow:auto;display:flex;flex-direction:column;gap:22px}
+.deck-picker-title{font:600 22px Oxanium;letter-spacing:.14em;color:#eef4f8;text-transform:uppercase;border-bottom:1px dashed #2a3742;padding-bottom:16px}
+.deck-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding-top:10px}
+.deck-toggle{padding:22px 10px;min-height:88px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.deck-toggle:hover{background:rgba(44,231,239,.1)}
+.deck-toggle.active,.deck-chip{border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 10px rgba(255,220,46,.35)}
 .deck-toggle.active:before,.deck-chip:before{border-top-color:var(--yellow)}
 .deck-picker-actions{display:flex;align-items:center;gap:14px}
 .deck-picker-actions>span{font:10px Oxanium;color:#8494a0;margin-right:auto}

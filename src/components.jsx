@@ -151,25 +151,32 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
         <strong>{score(run.score || 0)}</strong>
       </div>
       <div className="latest-run-subhead"><span>DECKS PLAYED</span><i /></div>
-      {onSetDecks ? (editingDecks
-        ? <DeckPicker initial={run.decks} onCancel={() => setEditingDecks(false)} onSave={(decks) => { onSetDecks(capture.id, decks); setEditingDecks(false) }} />
-        : <div className="deck-summary">
-          {run.decks.length
-            ? <div className="deck-chips">{run.decks.map((deck) => <span className="deck-chip" key={deck}>{deck}</span>)}</div>
-            : <span className="deck-empty">Not recorded for this run.</span>}
-          <button className="text-button" onClick={() => setEditingDecks(true)}>{run.decks.length ? 'EDIT DECKS' : '+ ADD DECKS PLAYED'}</button>
-        </div>) : null}
+      {onSetDecks ? <div className="deck-summary">
+        {run.decks.length
+          ? <div className="deck-chips">{run.decks.map((deck) => <span className="deck-chip" key={deck}>{deck}</span>)}</div>
+          : <span className="deck-empty">Not recorded for this run.</span>}
+        <button className="text-button" onClick={() => setEditingDecks(true)}>{run.decks.length ? 'EDIT DECKS' : '+ ADD DECKS PLAYED'}</button>
+      </div> : null}
     </div>
     <ChartTooltip tip={tip} />
+    {editingDecks ? <DeckPicker initial={run.decks} onCancel={() => setEditingDecks(false)} onSave={(decks) => { onSetDecks(capture.id, decks); setEditingDecks(false) }} /> : null}
   </Section>
 }
 
 // The game never records which 8 of the 16 decks a run used, so the player
 // tags it manually after the fact. Enforces exactly 8 selected before saving,
-// same as the game's own deck-select screen.
+// same as the game's own deck-select screen. Rendered as a full overlay
+// (like the game's own dedicated deck-select screen) rather than crammed
+// into the ~330px sidebar column — that's the only way the cards can be
+// sized close to how they actually look in-game instead of tiny buttons.
 function DeckPicker({ initial, onSave, onCancel }) {
   const [selected, setSelected] = useState(() => new Set(initial))
   const [triedIncomplete, setTriedIncomplete] = useState(false)
+  useEffect(() => {
+    const onKey = (event) => { if (event.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onCancel])
   const toggle = (deck) => setSelected((current) => {
     const next = new Set(current)
     if (next.has(deck)) next.delete(deck)
@@ -182,14 +189,17 @@ function DeckPicker({ initial, onSave, onCancel }) {
   // broken/missing) — an incomplete selection shows why it didn't save
   // instead of just not doing anything.
   const submit = () => { if (complete) onSave([...selected]); else setTriedIncomplete(true) }
-  return <div className="deck-picker">
-    <div className="deck-picker-grid">
-      {DECKS.map((deck) => <button key={deck} className={`deck-toggle${selected.has(deck) ? ' active' : ''}`} onClick={() => { toggle(deck); setTriedIncomplete(false) }}>{deck}</button>)}
-    </div>
-    <div className="deck-picker-actions">
-      <span className={complete ? '' : 'deck-count-off'}>{count} / {DECK_COUNT} selected{triedIncomplete && !complete ? ' — pick exactly 8 to save' : ''}</span>
-      <button className="text-button" onClick={onCancel}>CANCEL</button>
-      <button className="deck-save" onClick={submit}>SAVE</button>
+  return <div className="deck-picker-backdrop" onClick={onCancel}>
+    <div className="deck-picker" onClick={(event) => event.stopPropagation()}>
+      <div className="deck-picker-title">DECKS PLAYED</div>
+      <div className="deck-picker-grid">
+        {DECKS.map((deck) => <button key={deck} className={`deck-toggle${selected.has(deck) ? ' active' : ''}`} onClick={() => { toggle(deck); setTriedIncomplete(false) }}>{deck}</button>)}
+      </div>
+      <div className="deck-picker-actions">
+        <span className={complete ? '' : 'deck-count-off'}>{count} / {DECK_COUNT} selected{triedIncomplete && !complete ? ' — pick exactly 8 to save' : ''}</span>
+        <button className="text-button" onClick={onCancel}>CANCEL</button>
+        <button className="deck-save" onClick={submit}>SAVE</button>
+      </div>
     </div>
   </div>
 }

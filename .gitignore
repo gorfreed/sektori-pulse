@@ -4,6 +4,7 @@ release/
 work/
 outputs/
 .specstory/
+.vscode/
 *.log
 
 # Unused local test artifact — not yet wired into the app (see README/OCR

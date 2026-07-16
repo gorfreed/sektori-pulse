@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('pulse', {
   getRunCaptures: () => ipcRenderer.invoke('pulse:get-run-captures'),
   getGameStatus: () => ipcRenderer.invoke('pulse:get-game-status'),
   deleteRun: (id) => ipcRenderer.invoke('pulse:delete-run', id),
+  updateRunDecks: (id, decks) => ipcRenderer.invoke('pulse:update-run-decks', id, decks),
   onUpdate: (callback) => {
     const handler = (_event, payload) => callback(payload)
     ipcRenderer.on('pulse:update', handler)

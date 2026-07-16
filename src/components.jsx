@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BarChart3, Crosshair, Download, Layers, Loader2, Orbit, RefreshCw, Settings } from 'lucide-react'
 import { dateTime, duration, number, score } from './lib.js'
-import { bestRunForMetric, captureScoreSeries, captureSummary, COMPOSITION_SERIES, newBestMetrics, normalizeCapture, RUN_METRICS, runAnalytics, SHIPS, zoomToWindowMs } from './runData.js'
+import { bestRunForMetric, captureScoreSeries, captureSummary, COMPOSITION_SERIES, DECK_COUNT, DECKS, newBestMetrics, normalizeCapture, RUN_METRICS, runAnalytics, SHIPS, zoomToWindowMs } from './runData.js'
 
 function useMeasure(fallback = { width: 300, height: 120 }) {
   const ref = useRef(null)
@@ -94,9 +94,17 @@ export function DeleteRunButton({ onDelete, compact = false }) {
   </button>
 }
 
-export function LatestRunPanel({ captures, inspected, freshId = null, onClear, onDelete, onSelectRun }) {
+export function LatestRunPanel({ captures, inspected, freshId = null, onClear, onDelete, onSelectRun, onSetDecks }) {
   const [tip, tipHandlers] = useChartTooltip()
+  const [editingDecks, setEditingDecks] = useState(false)
   const capture = inspected || captures[0]
+  // Close the deck editor when the displayed run changes, without an effect
+  // (which would cause an extra render) — bail out during render instead.
+  const lastCaptureIdRef = useRef(capture?.id)
+  if (lastCaptureIdRef.current !== capture?.id) {
+    lastCaptureIdRef.current = capture?.id
+    if (editingDecks) setEditingDecks(false)
+  }
   if (!capture) {
     return <Section title="LATEST RUN" className="latest-run">
       <EmptyState title="No runs yet" body="Finish a Sektori run and its full result breakdown will appear here the moment it is captured." />
@@ -142,9 +150,42 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
         <span>= SCORE</span>
         <strong>{score(run.score || 0)}</strong>
       </div>
+      <div className="latest-run-subhead"><span>DECKS PLAYED</span><i /></div>
+      {onSetDecks ? (editingDecks
+        ? <DeckPicker initial={run.decks} onCancel={() => setEditingDecks(false)} onSave={(decks) => { onSetDecks(capture.id, decks); setEditingDecks(false) }} />
+        : <div className="deck-summary">
+          {run.decks.length
+            ? <div className="deck-chips">{run.decks.map((deck) => <span className="deck-chip" key={deck}>{deck}</span>)}</div>
+            : <span className="deck-empty">Not recorded for this run.</span>}
+          <button className="text-button" onClick={() => setEditingDecks(true)}>{run.decks.length ? 'EDIT DECKS' : '+ ADD DECKS PLAYED'}</button>
+        </div>) : null}
     </div>
     <ChartTooltip tip={tip} />
   </Section>
+}
+
+// The game never records which 8 of the 16 decks a run used, so the player
+// tags it manually after the fact. Enforces exactly 8 selected before saving,
+// same as the game's own deck-select screen.
+function DeckPicker({ initial, onSave, onCancel }) {
+  const [selected, setSelected] = useState(() => new Set(initial))
+  const toggle = (deck) => setSelected((current) => {
+    const next = new Set(current)
+    if (next.has(deck)) next.delete(deck)
+    else next.add(deck)
+    return next
+  })
+  const count = selected.size
+  return <div className="deck-picker">
+    <div className="deck-picker-grid">
+      {DECKS.map((deck) => <button key={deck} className={`deck-toggle${selected.has(deck) ? ' active' : ''}`} onClick={() => toggle(deck)}>{deck}</button>)}
+    </div>
+    <div className="deck-picker-actions">
+      <span className={count === DECK_COUNT ? '' : 'deck-count-off'}>{count} / {DECK_COUNT} selected</span>
+      <button className="text-button" onClick={onCancel}>CANCEL</button>
+      <button className="deck-save" disabled={count !== DECK_COUNT} onClick={() => onSave([...selected])}>SAVE</button>
+    </div>
+  </div>
 }
 
 function formatCaptureValue(value, kind) {

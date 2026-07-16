@@ -153,9 +153,18 @@ function reconcileBreakdown(hard, soft) {
   // breakdown row (observed on a real run: components 8,369,320, score
   // 7,369,320). The displayed score is authoritative; a match is a sum equal
   // to a score candidate plus a small whole number of millions.
+  //
+  // That penalty check alone can't tell a real multi-continue run apart from
+  // OCR dropping the score's leading digit group entirely (e.g. reading
+  // "5,034,170" as "34,170") — both look like "sum minus a clean number of
+  // millions". A genuine per-continue penalty knocks the number down by a
+  // few million without changing its digit count; losing whole leading
+  // digits does. Reject any match that would require the target to have
+  // shed more than one digit's worth of magnitude versus the breakdown sum.
   const matchesTarget = (sum) => targets.find((target) => {
     const penalty = sum - target
-    return penalty >= 0 && penalty % 1000000 === 0 && penalty <= 10000000
+    if (penalty < 0 || penalty % 1000000 !== 0 || penalty > 10000000) return false
+    return String(sum).length - String(target).length <= 1
   })
   const combo = []
   const search = (index, sum) => {

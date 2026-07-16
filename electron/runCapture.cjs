@@ -51,6 +51,21 @@ function listRecords(userDataDir) {
   }
 }
 
+// Merge a partial update (e.g. the decks the player manually tags a run
+// with, since the game never records that anywhere) into an existing record.
+function updateRecord(userDataDir, id, patch) {
+  const records = listRecords(userDataDir).reverse() // back to chronological file order
+  let found = false
+  const updated = records.map((record) => {
+    if (record.id !== id) return record
+    found = true
+    return { ...record, ...patch }
+  })
+  if (!found) return listRecords(userDataDir)
+  fs.writeFileSync(recordsPath(userDataDir), updated.map((record) => JSON.stringify(record)).join('\n') + (updated.length ? '\n' : ''))
+  return listRecords(userDataDir)
+}
+
 // Remove a run record and its captured page images.
 function deleteRecord(userDataDir, id) {
   const records = listRecords(userDataDir).reverse() // back to chronological file order
@@ -197,4 +212,4 @@ async function tryCapture({ userDataDir, processName = 'Sektori', ship = null, o
   return record
 }
 
-module.exports = { tryCapture, listRecords, deleteRecord, capturesDir, recordsPath, checkGameStatus }
+module.exports = { tryCapture, listRecords, updateRecord, deleteRecord, capturesDir, recordsPath, checkGameStatus }

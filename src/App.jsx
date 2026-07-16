@@ -25,7 +25,13 @@ function useRunCaptures() {
     const updated = await window.pulse.deleteRun(id)
     setCaptures(updated)
   }
-  return { captures, freshId, deleteRun }
+  const setDecks = async (id, decks) => {
+    if (!window.pulse) return []
+    const updated = await window.pulse.updateRunDecks(id, decks)
+    setCaptures(updated)
+    return updated
+  }
+  return { captures, freshId, deleteRun, setDecks }
 }
 
 // Tracks whether a capture is mid-flight (screenshots taken, background OCR
@@ -86,7 +92,7 @@ export default function App() {
   const [inspected, setInspected] = useState(null)
   const [shipFilter, setShipFilter] = useState(SHIPS[0])
   const { data, refreshing, refresh, chooseSave, error, isDesktop } = useDashboard()
-  const { captures: allCaptures, freshId, deleteRun } = useRunCaptures()
+  const { captures: allCaptures, freshId, deleteRun, setDecks } = useRunCaptures()
   const capturePending = useCaptureProgress()
   const gameRunning = useGameStatus()
   // The ship filter is global: every panel on the dashboard — best/average/
@@ -108,7 +114,7 @@ export default function App() {
   return <div className="app-shell">
     <Topbar page={page} setPage={setPage} isDesktop={isDesktop} gameRunning={gameRunning} refreshing={refreshing} onRefresh={refresh} onExport={exportData} shipFilter={shipFilter} setShipFilter={setShipFilter} capturePending={capturePending} />
     <main>{error ? <div className="error-bar">SAVE LINK LOST — {error} <button onClick={chooseSave}>LOCATE SAVE</button></div> : null}
-      <Page page={page} data={data} captures={captures} shipFilter={shipFilter} freshId={freshId} deleteRun={deleteRun} chooseSave={chooseSave} isDesktop={isDesktop} inspected={inspected} setInspected={setInspected} onSelectRun={onSelectRun} />
+      <Page page={page} data={data} captures={captures} shipFilter={shipFilter} freshId={freshId} deleteRun={deleteRun} setDecks={setDecks} chooseSave={chooseSave} isDesktop={isDesktop} inspected={inspected} setInspected={setInspected} onSelectRun={onSelectRun} />
     </main>
   </div>
 }
@@ -119,12 +125,18 @@ function Page({ page, ...props }) {
   return <SettingsPage {...props} />
 }
 
-function Campaign({ data, captures, freshId, deleteRun, inspected, setInspected, onSelectRun, shipFilter }) {
+function Campaign({ data, captures, freshId, deleteRun, setDecks, inspected, setInspected, onSelectRun, shipFilter }) {
+  // Keeps the panel showing this run's freshly saved decks immediately,
+  // instead of the stale pre-save object `inspected` still points at.
+  const onSetDecks = async (id, decks) => {
+    const updated = await setDecks(id, decks)
+    if (inspected?.id === id) setInspected(updated.find((item) => item.id === id) || null)
+  }
   return <div className="ocr-overview-grid">
     <FormPanel captures={captures} shipFilter={shipFilter} />
     <ScoreChart history={data.history} captures={captures} onSelectRun={onSelectRun} />
     <RunCaptureFeed captures={captures} onSelect={setInspected} freshId={freshId} selectedId={(inspected || captures[0])?.id ?? null} compactRows />
-    <LatestRunPanel captures={captures} inspected={inspected} freshId={freshId} onClear={() => setInspected(null)} onDelete={async (id) => { await deleteRun(id); setInspected(null) }} onSelectRun={onSelectRun} />
+    <LatestRunPanel captures={captures} inspected={inspected} freshId={freshId} onClear={() => setInspected(null)} onDelete={async (id) => { await deleteRun(id); setInspected(null) }} onSelectRun={onSelectRun} onSetDecks={onSetDecks} />
   </div>
 }
 

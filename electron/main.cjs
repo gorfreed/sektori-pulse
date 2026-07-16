@@ -91,6 +91,7 @@ app.whenReady().then(() => {
   ipcMain.handle('pulse:get-run-captures', () => runCapture.listRecords(app.getPath('userData')))
   ipcMain.handle('pulse:get-game-status', () => ({ running: gameRunning }))
   ipcMain.handle('pulse:delete-run', (_event, id) => runCapture.deleteRecord(app.getPath('userData'), id))
+  ipcMain.handle('pulse:update-run-decks', (_event, id, decks) => runCapture.updateRecord(app.getPath('userData'), id, { decks }))
   ipcMain.handle('pulse:choose-save', async () => {
     const choice = await dialog.showOpenDialog(window, { title: 'Locate Sektori savegame.json', properties: ['openFile'], filters: [{ name: 'Sektori save', extensions: ['json'] }] })
     if (choice.canceled || !choice.filePaths[0]) return null

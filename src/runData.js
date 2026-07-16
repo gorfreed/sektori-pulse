@@ -20,6 +20,19 @@ function cleanWorldSequence(raw) {
   return match ? `${match[1]}/${match[2]}` : raw
 }
 
+// A real per-continue penalty knocks the displayed score down from the
+// breakdown sum by a clean number of millions without changing its digit
+// count. OCR dropping the score's leading digit group (e.g. reading
+// "5,034,170" as "34,170") looks arithmetically identical — "sum minus a
+// clean number of millions" — but sheds whole digits. Only trust the OCR
+// score as-is if it isn't that kind of truncation.
+function scoreLooksTruncated(ocrScore, breakdownScore) {
+  if (breakdownScore <= 0) return false
+  const penalty = breakdownScore - ocrScore
+  if (penalty < 0 || penalty % 1000000 !== 0 || penalty > 10000000) return false
+  return String(breakdownScore).length - String(ocrScore).length > 1
+}
+
 export function normalizeCapture(capture) {
   const fields = capture.fields || {}
   const breakdown = {
@@ -32,13 +45,15 @@ export function normalizeCapture(capture) {
   }
   const ocrScore = numeric(firstField(fields, ['score']))
   const breakdownScore = Object.values(breakdown).reduce((total, value) => total + (value || 0), 0)
-  const useBreakdownScore = (ocrScore || 0) < 1000 && breakdownScore > (ocrScore || 0)
+  const useBreakdownScore = breakdownScore > (ocrScore || 0)
+    && ((ocrScore || 0) < 1000 || scoreLooksTruncated(ocrScore || 0, breakdownScore))
   return {
     id: capture.id,
     capturedAt: capture.capturedAt,
     pageCount: capture.pageCount || 0,
     sections: capture.sections || [],
     pages: capture.pages || [],
+    decks: capture.decks || [],
     fields,
     score: useBreakdownScore ? breakdownScore : (ocrScore || 0),
     scoreSource: useBreakdownScore ? 'breakdown-minimum' : 'ocr',
@@ -101,6 +116,18 @@ export const RUN_METRICS = [
 ]
 
 export const SHIPS = ['Redeemer', 'Defier', 'Sentinel']
+
+// The pre-run deck picker (8 of these 16, chosen before every run) never
+// shows up on the results screen or anywhere in the save file, so there's no
+// way to capture it automatically. Pulse just lets the player tag a run with
+// what they picked, after the fact.
+export const DECKS = [
+  'Exotic', 'Gambler', 'Spammer', 'Time',
+  'Wild', 'Blight', 'Manipulator', 'Chaos',
+  'Blaster', 'Striker', 'Drones', 'Formations',
+  'Missile', 'Movement', 'Protector', 'Collector',
+]
+export const DECK_COUNT = 8
 
 // Which of this run's metrics are the CURRENT record — compared against every
 // other run, not just earlier ones, so a badge disappears the moment a later

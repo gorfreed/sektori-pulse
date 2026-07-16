@@ -23,9 +23,11 @@
 .best-badge{background:var(--yellow);color:#03070c;font:700 8px Oxanium;letter-spacing:.1em;padding:2px 5px;border-radius:2px;font-style:normal;box-shadow:0 0 8px #ffdc2e66;white-space:nowrap}
 .latest-run-subhead{display:flex;align-items:center;gap:8px;padding:10px 0 4px;border-bottom:0!important}.latest-run-subhead span{font:600 9px Oxanium;color:var(--yellow);letter-spacing:.14em}.latest-run-subhead i{flex:1;height:1px;background:#3d3418}
 .latest-run-rows .latest-run-subhead{grid-template-columns:none;display:flex}
-.deck-summary{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 0 10px}
+.deck-summary{display:flex;flex-direction:column;gap:10px;padding:6px 0 10px}
 .deck-empty{color:#5b6e79;font:11px Oxanium}
-.deck-chips{display:flex;flex-wrap:wrap;gap:6px;padding-top:8px}
+.deck-summary .text-button{align-self:flex-end}
+/* Same 4-per-row layout the game itself uses for a set of 8 decks. */
+.deck-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-top:8px}
 /* Styled after the game's own deck-select cards: a bordered slate rectangle
    with a small triangular tab on its top edge, cyan by default and switching
    to the game's gold/selected treatment once picked. */

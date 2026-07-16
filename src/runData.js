@@ -122,10 +122,10 @@ export const SHIPS = ['Redeemer', 'Defier', 'Sentinel']
 // way to capture it automatically. Pulse just lets the player tag a run with
 // what they picked, after the fact.
 export const DECKS = [
-  'Exotic', 'Gambler', 'Spammer', 'Time',
-  'Wild', 'Blight', 'Manipulator', 'Chaos',
   'Blaster', 'Striker', 'Drones', 'Formations',
   'Missile', 'Movement', 'Protector', 'Collector',
+  'Exotic', 'Gambler', 'Spammer', 'Time',
+  'Wild', 'Blight', 'Manipulator', 'Chaos',
 ]
 export const DECK_COUNT = 8
 

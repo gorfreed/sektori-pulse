@@ -25,13 +25,19 @@
 .latest-run-rows .latest-run-subhead{grid-template-columns:none;display:flex}
 .deck-summary{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 0 10px}
 .deck-empty{color:#5b6e79;font:11px Oxanium}
-.deck-chips{display:flex;flex-wrap:wrap;gap:6px}
-.deck-chip{border:1px solid #34414a;background:#0c1720;color:#c7d1d7;font:600 9px Oxanium;letter-spacing:.06em;padding:5px 9px;text-transform:uppercase}
+.deck-chips{display:flex;flex-wrap:wrap;gap:6px;padding-top:8px}
+/* Styled after the game's own deck-select cards: a bordered slate rectangle
+   with a small triangular tab on its top edge, cyan by default and switching
+   to the game's gold/selected treatment once picked. */
+.deck-chip,.deck-toggle{position:relative;border:1.5px solid var(--cyan);background:linear-gradient(180deg,rgba(8,20,26,.9),rgba(4,10,14,.9));color:var(--cyan);font:600 10px Oxanium;letter-spacing:.06em;text-transform:uppercase;text-align:center}
+.deck-chip:before,.deck-toggle:before{content:"";position:absolute;top:-1.5px;left:50%;transform:translate(-50%,-100%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--cyan)}
+.deck-chip{padding:7px 12px;display:inline-block}
 .deck-picker{padding:8px 0 10px;display:flex;flex-direction:column;gap:10px}
-.deck-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.deck-toggle{border:1px solid #34414a;background:#0c1720;color:#8494a0;font:600 9px Oxanium;letter-spacing:.05em;padding:8px 4px;text-transform:uppercase;cursor:pointer}
-.deck-toggle:hover{color:#fff;border-color:#4a5a66}
-.deck-toggle.active{color:#03070c;background:var(--yellow);border-color:var(--yellow)}
+.deck-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 6px;padding-top:8px}
+.deck-toggle{padding:12px 4px;min-height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.deck-toggle:hover{background:rgba(44,231,239,.08)}
+.deck-toggle.active,.deck-chip{border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 8px rgba(255,220,46,.3)}
+.deck-toggle.active:before,.deck-chip:before{border-top-color:var(--yellow)}
 .deck-picker-actions{display:flex;align-items:center;gap:14px}
 .deck-picker-actions>span{font:10px Oxanium;color:#8494a0;margin-right:auto}
 .deck-picker-actions>span.deck-count-off{color:var(--red)}

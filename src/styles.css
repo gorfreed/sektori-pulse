@@ -42,7 +42,6 @@
 .deck-picker-actions>span{font:10px Oxanium;color:#8494a0;margin-right:auto}
 .deck-picker-actions>span.deck-count-off{color:var(--red)}
 .deck-save{border:1px solid var(--red);background:#31101a;color:#fff;padding:7px 14px;font:10px Oxanium;letter-spacing:.06em;cursor:pointer}
-.deck-save:disabled{opacity:.4;cursor:default}
 .latest-run-total{background:rgba(255,220,46,.07);border-bottom:0!important;border-top:1px solid #3d3418;margin-top:-1px}.latest-run-total span{color:var(--yellow)!important}.latest-run-total strong{color:var(--yellow)!important}
 .result-page:last-child:before{background:var(--yellow)}.result-page:last-child{border-color:#4a4322}.result-page:last-child .result-page-title strong{color:var(--yellow)}
 .score-chart{display:flex;flex-direction:column}.chart-body{flex:1;min-height:0;position:relative;overflow:hidden}.chart-body svg{display:block;position:absolute;inset:0}

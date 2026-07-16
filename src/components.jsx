@@ -169,6 +169,7 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
 // same as the game's own deck-select screen.
 function DeckPicker({ initial, onSave, onCancel }) {
   const [selected, setSelected] = useState(() => new Set(initial))
+  const [triedIncomplete, setTriedIncomplete] = useState(false)
   const toggle = (deck) => setSelected((current) => {
     const next = new Set(current)
     if (next.has(deck)) next.delete(deck)
@@ -176,14 +177,19 @@ function DeckPicker({ initial, onSave, onCancel }) {
     return next
   })
   const count = selected.size
+  const complete = count === DECK_COUNT
+  // The save button always responds to a click (a disabled button reads as
+  // broken/missing) — an incomplete selection shows why it didn't save
+  // instead of just not doing anything.
+  const submit = () => { if (complete) onSave([...selected]); else setTriedIncomplete(true) }
   return <div className="deck-picker">
     <div className="deck-picker-grid">
-      {DECKS.map((deck) => <button key={deck} className={`deck-toggle${selected.has(deck) ? ' active' : ''}`} onClick={() => toggle(deck)}>{deck}</button>)}
+      {DECKS.map((deck) => <button key={deck} className={`deck-toggle${selected.has(deck) ? ' active' : ''}`} onClick={() => { toggle(deck); setTriedIncomplete(false) }}>{deck}</button>)}
     </div>
     <div className="deck-picker-actions">
-      <span className={count === DECK_COUNT ? '' : 'deck-count-off'}>{count} / {DECK_COUNT} selected</span>
+      <span className={complete ? '' : 'deck-count-off'}>{count} / {DECK_COUNT} selected{triedIncomplete && !complete ? ' — pick exactly 8 to save' : ''}</span>
       <button className="text-button" onClick={onCancel}>CANCEL</button>
-      <button className="deck-save" disabled={count !== DECK_COUNT} onClick={() => onSave([...selected])}>SAVE</button>
+      <button className="deck-save" onClick={submit}>SAVE</button>
     </div>
   </div>
 }

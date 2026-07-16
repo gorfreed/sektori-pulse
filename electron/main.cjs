@@ -21,6 +21,16 @@ const SAVE_MARKER = '###***### +++ ###***###'
 // the game window's foreground, and both try to write runCaptures.jsonl.
 if (!app.requestSingleInstanceLock()) app.quit()
 
+// If the app is genuinely still open (not just backgrounded — see the
+// window 'closed' handler below, which now prevents that case entirely) and
+// the user launches it again, surface the existing window instead of the
+// launch attempt silently doing nothing.
+app.on('second-instance', () => {
+  if (!window) return
+  if (window.isMinimized()) window.restore()
+  window.focus()
+})
+
 let window
 let store
 let captureBusy = false
@@ -67,6 +77,18 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) window.loadURL(process.env.VITE_DEV_SERVER_URL)
   else if (!app.isPackaged) window.loadURL('http://127.0.0.1:5173')
   else window.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+  // The overlay is a second, independent window that stays open during
+  // gameplay, so Electron's window-all-closed never fires from just closing
+  // the dashboard (it only fires once every window is gone) — the whole app
+  // was silently surviving in the background with no visible window, and a
+  // relaunch attempt would then just silently no-op into the still-running
+  // instance via requestSingleInstanceLock. Closing the dashboard is the
+  // user's "quit" signal regardless of what the overlay is doing.
+  window.on('closed', () => {
+    window = null
+    cleanup()
+    app.quit()
+  })
 }
 
 app.whenReady().then(() => {

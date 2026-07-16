@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BarChart3, Crosshair, Download, Layers, Loader2, Orbit, RefreshCw, Settings } from 'lucide-react'
+import { BarChart3, ChevronLeft, ChevronRight, Crosshair, Download, Layers, Loader2, Orbit, RefreshCw, Settings } from 'lucide-react'
 import { dateTime, duration, number, score } from './lib.js'
 import { bestRunForMetric, captureScoreSeries, captureSummary, COMPOSITION_SERIES, DECK_COUNT, DECKS, newBestMetrics, normalizeCapture, RUN_METRICS, runAnalytics, SHIPS, zoomToWindowMs } from './runData.js'
 
@@ -163,15 +163,17 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
   </Section>
 }
 
+const DECK_PAGE_SIZE = 8
+
 // The game never records which 8 of the 16 decks a run used, so the player
-// tags it manually after the fact. Enforces exactly 8 selected before saving,
-// same as the game's own deck-select screen. Rendered as a full overlay
-// (like the game's own dedicated deck-select screen) rather than crammed
-// into the ~330px sidebar column — that's the only way the cards can be
-// sized close to how they actually look in-game instead of tiny buttons.
+// tags it manually after the fact. Mirrors the game's own deck-select screen:
+// portrait cards, paginated 4x2 (8 per page) rather than all 16 crammed into
+// one grid, no card descriptions (titles only).
 function DeckPicker({ initial, onSave, onCancel }) {
   const [selected, setSelected] = useState(() => new Set(initial))
+  const [page, setPage] = useState(0)
   const [triedIncomplete, setTriedIncomplete] = useState(false)
+  const pageCount = Math.ceil(DECKS.length / DECK_PAGE_SIZE)
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') onCancel() }
     window.addEventListener('keydown', onKey)
@@ -189,11 +191,17 @@ function DeckPicker({ initial, onSave, onCancel }) {
   // broken/missing) — an incomplete selection shows why it didn't save
   // instead of just not doing anything.
   const submit = () => { if (complete) onSave([...selected]); else setTriedIncomplete(true) }
+  const visible = DECKS.slice(page * DECK_PAGE_SIZE, page * DECK_PAGE_SIZE + DECK_PAGE_SIZE)
   return <div className="deck-picker-backdrop" onClick={onCancel}>
     <div className="deck-picker" onClick={(event) => event.stopPropagation()}>
       <div className="deck-picker-title">DECKS PLAYED</div>
       <div className="deck-picker-grid">
-        {DECKS.map((deck) => <button key={deck} className={`deck-toggle${selected.has(deck) ? ' active' : ''}`} onClick={() => { toggle(deck); setTriedIncomplete(false) }}>{deck}</button>)}
+        {visible.map((deck) => <button key={deck} className={`deck-toggle${selected.has(deck) ? ' active' : ''}`} onClick={() => { toggle(deck); setTriedIncomplete(false) }}>{deck}</button>)}
+      </div>
+      <div className="deck-picker-pager">
+        <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}><ChevronLeft /></button>
+        <span>{page + 1} / {pageCount}</span>
+        <button onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} disabled={page === pageCount - 1}><ChevronRight /></button>
       </div>
       <div className="deck-picker-actions">
         <span className={complete ? '' : 'deck-count-off'}>{count} / {DECK_COUNT} selected{triedIncomplete && !complete ? ' — pick exactly 8 to save' : ''}</span>

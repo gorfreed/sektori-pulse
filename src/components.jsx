@@ -362,8 +362,24 @@ export function ScoreChart({ captures = [], zoom: zoomProp, onZoomChange, onSele
   }))
   // Line identity = ship, dot color = difficulty (two independent encodings
   // on separate marks). Dots wear a surface ring so they read against lines.
+  //
+  // The line is an exponential moving average of the ship's scores, not a
+  // raw point-to-point connection: a single early death produces a near-zero
+  // score that would yank a raw line to the floor and back, turning the
+  // whole chart into meaningless zigzag. The EMA (~5-run memory) absorbs
+  // one-off fails into a gentle dip while sustained improvement still moves
+  // it clearly — the raw dots keep every individual result visible.
+  const EMA_ALPHA = 2 / (5 + 1)
   const shipSeries = SCORE_CHART_SHIPS
-    .map((shipDef) => ({ ...shipDef, points: points.filter((point) => (point.ship || null) === shipDef.match) }))
+    .map((shipDef) => {
+      const shipPoints = points.filter((point) => (point.ship || null) === shipDef.match)
+      let ema = null
+      const trend = shipPoints.map((point) => {
+        ema = ema === null ? point.value : EMA_ALPHA * point.value + (1 - EMA_ALPHA) * ema
+        return { x: point.x, y: pad.top + innerH - (ema / maxScore) * innerH }
+      })
+      return { ...shipDef, points: shipPoints, trend }
+    })
     .filter((series) => series.points.length > 0)
 
   return <Section title={hasRunScores ? 'RUN SCORE PROGRESSION' : 'WAITING FOR RUN SCORES'} action={<div className="zoom-slider"><span>WINDOW</span><input type="range" min="0" max="100" step="1" value={zoom} onChange={(event) => setZoom(Number(event.target.value))} /><strong>{humanWindow(windowMs)}</strong></div>} className="score-chart">
@@ -383,7 +399,7 @@ export function ScoreChart({ captures = [], zoom: zoomProp, onZoomChange, onSele
           </g>
         })}
         {hasRunScores ? <>
-          {shipSeries.map((series) => series.points.length > 1 ? <polyline key={series.label} points={series.points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ')} fill="none" stroke={series.color} strokeWidth="2" pointerEvents="none" /> : null)}
+          {shipSeries.map((series) => series.trend.length > 1 ? <polyline key={series.label} points={series.trend.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ')} fill="none" stroke={series.color} strokeWidth="2" pointerEvents="none" /> : null)}
           {points.map((point, index) => <g key={`${point.date}-${index}`} pointerEvents="none">
             <circle cx={point.x} cy={point.y} r="4.5" fill={difficultyColor(point.difficulty)} stroke="#071019" strokeWidth="2" />
             {index === points.length - 1 ? <circle cx={point.x} cy={point.y} r="8" className="pulse-point" /> : null}

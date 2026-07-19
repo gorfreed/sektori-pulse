@@ -363,29 +363,26 @@ export function ScoreChart({ captures = [], zoom: zoomProp, onZoomChange, onSele
   // Line identity = ship, dot color = difficulty (two independent encodings
   // on separate marks). Dots wear a surface ring so they read against lines.
   //
-  // The line connects the BEST run of each play session (runs separated by
-  // less than 6h belong to one session), not every raw score: connecting all
-  // runs turns the chart into meaningless zigzag because every early death
-  // yanks the line to the floor, and an averaged line floats between the
-  // dots touching none of them. Peak-per-session always passes through real
-  // dots and answers the question the chart exists for — "is my best getting
-  // better?" — while fails stay visible as dots under the line.
-  const SESSION_GAP_MS = 6 * 3600 * 1000
+  // The line connects the BEST run of each calendar day, not every raw
+  // score: connecting all runs turns the chart into meaningless zigzag
+  // because every early death yanks the line to the floor, and an averaged
+  // line floats between the dots touching none of them. Best-per-day always
+  // passes through real dots and answers the question the chart exists for —
+  // "am I better today than yesterday?" — while fails stay visible as dots
+  // under the line.
   const shipSeries = SCORE_CHART_SHIPS
     .map((shipDef) => {
       const shipPoints = points.filter((point) => (point.ship || null) === shipDef.match)
       const trend = []
-      let lastTime = null
+      let lastDay = null
       for (const point of shipPoints) {
-        const t = new Date(point.date).getTime()
-        // Gap measured run-to-run, so a marathon session longer than 6h
-        // total still counts as one session as long as runs keep coming.
-        if (lastTime === null || t - lastTime > SESSION_GAP_MS) {
+        const day = new Date(point.date).toDateString()
+        if (day !== lastDay) {
           trend.push(point)
         } else if (point.value > trend[trend.length - 1].value) {
           trend[trend.length - 1] = point
         }
-        lastTime = t
+        lastDay = day
       }
       return { ...shipDef, points: shipPoints, trend }
     })

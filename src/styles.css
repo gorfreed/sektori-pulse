@@ -10,7 +10,7 @@
 .run-score-cell{display:flex;flex-direction:column}.run-score-cell span{font:8px Oxanium;color:#647783}.run-score-cell strong{font:18px Oxanium;color:var(--yellow);white-space:nowrap}.run-score-cell .missing-score{font-size:12px;color:var(--red)}.run-score-cell small{font-size:8px;color:#6c7e89}
 .pulse-grade-cell{display:flex;flex-direction:column}.pulse-grade-cell span{font:8px Oxanium;color:#647783}.pulse-grade-cell strong{font:28px Oxanium;color:var(--cyan);line-height:.95;text-shadow:0 0 10px #23dbe555}.pulse-grade-cell small{font-size:8px;color:#6c7e89;white-space:nowrap}
 .capture-feed{min-height:330px;padding-bottom:10px}.capture-card{border-bottom:1px solid #1f2d37;padding:14px 18px}.capture-card:last-child{border-bottom:0}.capture-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.capture-card-head strong{font:13px Oxanium;color:#fff}.capture-card-head span{font:9px Oxanium;color:var(--cyan)}.capture-card-fields{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.capture-card-fields>div{display:flex;flex-direction:column;border-left:2px solid #24313b;padding-left:8px}.capture-card-fields span{font:8px Oxanium;color:#647783;text-transform:uppercase}.capture-card-fields strong{font:16px Oxanium;color:var(--yellow)}
-.ocr-overview-grid{display:grid;grid-template-columns:326px minmax(430px,1fr) 330px;grid-template-rows:263px 1fr;gap:10px;height:calc(100vh - 100px)}.ocr-overview-grid .score-chart{grid-column:2}.ocr-overview-grid .recent-runs{grid-column:1/3;min-height:0;display:flex;flex-direction:column}.ocr-overview-grid .latest-run{grid-column:3;grid-row:1/3}
+.ocr-overview-grid{display:grid;grid-template-columns:326px minmax(400px,1fr) 380px;grid-template-rows:263px 1fr;gap:10px;height:calc(100vh - 100px)}.ocr-overview-grid .score-chart{grid-column:2}.ocr-overview-grid .recent-runs{grid-column:1/3;min-height:0;display:flex;flex-direction:column}.ocr-overview-grid .latest-run{grid-column:3;grid-row:1/3}
 .recent-runs .run-rows-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
 .capture-feed .run-rows-scroll{max-height:calc(100vh - 210px);overflow-y:auto;overflow-x:hidden}
 ::-webkit-scrollbar{width:9px;height:9px}
@@ -23,7 +23,9 @@
 .best-badge{background:var(--yellow);color:#03070c;font:700 8px Oxanium;letter-spacing:.1em;padding:2px 5px;border-radius:2px;font-style:normal;box-shadow:0 0 8px #ffdc2e66;white-space:nowrap}
 .latest-run-subhead{display:flex;align-items:center;gap:8px;padding:10px 0 4px;border-bottom:0!important}.latest-run-subhead span{font:600 9px Oxanium;color:var(--yellow);letter-spacing:.14em}.latest-run-subhead i{flex:1;height:1px;background:#3d3418}
 .latest-run-rows .latest-run-subhead{grid-template-columns:none;display:flex}
-.deck-summary{display:flex;flex-direction:column;gap:10px;padding:6px 0 10px}
+/* The whole summary is the click target for editing — no separate button. */
+.deck-summary{display:flex;flex-direction:column;gap:10px;padding:6px 0 10px;border:0;background:transparent;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.deck-summary-empty{color:var(--cyan);font:600 10px Oxanium;letter-spacing:.08em}
 .deck-empty{color:#5b6e79;font:11px Oxanium}
 .deck-summary .text-button{align-self:flex-end}
 /* Same 4-per-row layout the game itself uses for a set of 8 decks. */
@@ -66,6 +68,12 @@
 @keyframes rowSlideIn{from{opacity:0;transform:translateX(18px);box-shadow:inset 3px 0 var(--yellow)}60%{box-shadow:inset 3px 0 var(--yellow)}to{opacity:1;transform:translateX(0)}}
 @keyframes heroPop{0%{opacity:0;transform:scale(.7)}60%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
 .run-row.fresh{animation:rowSlideIn .6s cubic-bezier(.2,.8,.3,1) both;background:rgba(255,220,46,.05)}.run-row.selected{background:rgba(255,49,84,.09);box-shadow:inset 3px 0 var(--red)}
+/* Campaign-completed run (reached world 6): gold frame, like the game's own
+   completed-run gold treatment. Kept as an inset ring so row height and the
+   selected-state red edge still compose with it. */
+.run-row.completed{box-shadow:inset 0 0 0 1px var(--yellow)}
+.run-row.completed.selected{box-shadow:inset 0 0 0 1px var(--yellow),inset 3px 0 var(--red)}
+.completed-star{font-style:normal;color:var(--yellow);margin-right:8px;text-shadow:0 0 8px rgba(255,220,46,.6)}
 .latest-run.fresh .latest-run-rows>div,.latest-run.fresh .latest-run-subhead,.latest-run.fresh .latest-run-total{animation:flipIn .5s cubic-bezier(.2,.8,.3,1) both}
 .latest-run.fresh .latest-run-hero strong{animation:heroPop .7s cubic-bezier(.2,.8,.3,1) both}
 @media(prefers-reduced-motion:reduce){.run-row.fresh,.latest-run.fresh *{animation:none!important}}

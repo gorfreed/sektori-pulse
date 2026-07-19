@@ -20,6 +20,14 @@ function cleanWorldSequence(raw) {
   return match ? `${match[1]}/${match[2]}` : raw
 }
 
+// A run that made it to world 6/1 finished the campaign — the game's own
+// "[Completed]" tag next to World/Sequence is OCR-unreliable, but the world
+// number itself is verified, so reaching world 6 is the completion signal.
+function isCompletedRun(worldSequence) {
+  const match = String(worldSequence || '').match(/^(\d+)\s*\//)
+  return match ? Number(match[1]) >= 6 : false
+}
+
 // A real per-continue penalty knocks the displayed score down from the
 // breakdown sum by a clean number of millions without changing its digit
 // count. OCR dropping the score's leading digit group (e.g. reading
@@ -61,6 +69,7 @@ export function normalizeCapture(capture) {
     difficulty: firstField(fields, ['difficulty']),
     ship: firstField(fields, ['ship']),
     worldSequence: cleanWorldSequence(firstField(fields, ['worldSequence'])),
+    completed: isCompletedRun(cleanWorldSequence(firstField(fields, ['worldSequence']))),
     glimmerCollected: numeric(firstField(fields, ['glimmerCollected'])),
     stackUpgrades: numeric(firstField(fields, ['stackUpgrades'])),
     evolutions: numeric(firstField(fields, ['evolutions'])),

@@ -64,7 +64,7 @@ export function ShipTag({ value }) {
 
 function RunRow({ capture, onSelect, fresh = false, selected = false, rowRef }) {
   const run = normalizeCapture(capture)
-  return <button ref={rowRef} className={`run-row${fresh ? ' fresh' : ''}${selected ? ' selected' : ''}`} onClick={() => onSelect?.(capture)}>
+  return <button ref={rowRef} className={`run-row${fresh ? ' fresh' : ''}${selected ? ' selected' : ''}${run.completed ? ' completed' : ''}`} onClick={() => onSelect?.(capture)}>
     <span>{dateTime(run.capturedAt)}</span>
     <DifficultyTag value={run.difficulty} />
     <ShipTag value={run.ship} />
@@ -139,7 +139,7 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
   return <Section title={isInspecting ? 'RUN DETAIL' : 'LATEST RUN'} action={<div className="latest-run-actions">{onDelete ? <DeleteRunButton compact onDelete={() => onDelete(capture.id)} /> : null}{isInspecting ? <button className="text-button" onClick={onClear}>‹ LATEST</button> : null}</div>} className={`latest-run${isFresh ? ' fresh' : ''}`}>
     <div className="latest-run-hero">
       <span>{dateTime(run.capturedAt)} · WORLD {run.worldSequence || '—'} {run.difficulty ? <DifficultyTag value={run.difficulty} /> : null} {run.ship ? <ShipTag value={run.ship} /> : null}</span>
-      <strong>{score(run.score || 0)}</strong>
+      <strong>{run.completed ? <i className="completed-star" title="Campaign completed">★</i> : null}{score(run.score || 0)}</strong>
       {bests.has('score') ? <em className="best-badge">NEW BEST</em> : null}
     </div>
     <div className="latest-run-rows">
@@ -151,12 +151,11 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
         <strong>{score(run.score || 0)}</strong>
       </div>
       <div className="latest-run-subhead"><span>DECKS PLAYED</span><i /></div>
-      {onSetDecks ? <div className="deck-summary">
-        {run.decks.length
-          ? <div className="deck-chips">{run.decks.map((deck) => <span className="deck-chip" key={deck}>{deck}</span>)}</div>
-          : <span className="deck-empty">Not recorded for this run.</span>}
-        <button className="text-button" onClick={() => setEditingDecks(true)}>{run.decks.length ? 'EDIT DECKS' : '+ ADD DECKS PLAYED'}</button>
-      </div> : null}
+      {onSetDecks ? (run.decks.length
+        ? <button className="deck-summary" onClick={() => setEditingDecks(true)}>
+          <div className="deck-chips">{run.decks.map((deck) => <span className="deck-chip" key={deck}>{deck}</span>)}</div>
+        </button>
+        : <button className="deck-summary deck-summary-empty" onClick={() => setEditingDecks(true)}>+ ADD DECKS PLAYED</button>) : null}
     </div>
     <ChartTooltip tip={tip} />
     {editingDecks ? <DeckPicker initial={run.decks} onCancel={() => setEditingDecks(false)} onSave={(decks) => { onSetDecks(capture.id, decks); setEditingDecks(false) }} /> : null}

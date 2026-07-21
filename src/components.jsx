@@ -132,8 +132,8 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
       </>) : undefined}
       onMouseLeave={bestRun ? tipHandlers.hide : undefined}
       onClick={hoverable ? () => onSelectRun(bestRun.id) : undefined}>
-      <span>{tendencies.get(metric.key) ? <i className={`tendency ${tendencies.get(metric.key)}`}>{tendencies.get(metric.key) === 'up' ? '↗' : '↘'}</i> : null}{metric.label}</span>
-      <strong className={String(text).length > 9 ? 'dense' : ''}>{text}</strong>
+      <span>{metric.label}</span>
+      <strong className={String(text).length > 9 ? 'dense' : ''}>{tendencies.get(metric.key) ? <i className={`tendency ${tendencies.get(metric.key)}`}>{tendencies.get(metric.key) === 'up' ? '↗' : '↘'}</i> : null}{text}</strong>
       {bests.has(metric.key) ? <em className="best-badge">BEST</em> : null}
     </div>
   }

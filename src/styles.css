@@ -76,6 +76,10 @@
 .run-row.completed{box-shadow:inset 0 0 0 1px var(--yellow)}
 .run-row.completed.selected{box-shadow:inset 0 0 0 1px var(--yellow),inset 3px 0 var(--red)}
 .completed-star{font-style:normal;color:var(--yellow);margin-right:8px;text-shadow:0 0 8px rgba(255,220,46,.6)}
+/* Week-over-week tendency arrow shown before a detail metric's label. */
+.tendency{font-style:normal;font-size:11px;margin-right:5px;line-height:1}
+.tendency.up{color:var(--green)}
+.tendency.down{color:var(--red)}
 .latest-run.fresh .latest-run-rows>div,.latest-run.fresh .latest-run-subhead,.latest-run.fresh .latest-run-total{animation:flipIn .5s cubic-bezier(.2,.8,.3,1) both}
 .latest-run.fresh .latest-run-hero strong{animation:heroPop .7s cubic-bezier(.2,.8,.3,1) both}
 @media(prefers-reduced-motion:reduce){.run-row.fresh,.latest-run.fresh *{animation:none!important}}

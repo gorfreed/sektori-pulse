@@ -138,6 +138,53 @@ export const DECKS = [
 ]
 export const DECK_COUNT = 8
 
+// Monday-00:00 (local) week start, used to group runs into weeks.
+function weekStart(dateValue) {
+  const d = new Date(dateValue)
+  d.setHours(0, 0, 0, 0)
+  const day = (d.getDay() + 6) % 7 // Mon=0 .. Sun=6
+  d.setDate(d.getDate() - day)
+  return d.getTime()
+}
+
+// Per-metric week-over-week tendency for a run entry: an up/down arrow saying
+// whether this metric is trending up or down. Computed from weekly bests —
+// the best value of each week, not individual runs — comparing the entry's
+// own week (as of the entry) against the most recent earlier week that has
+// data. Only runs up to and including this entry's timestamp count, so once a
+// run is recorded its arrows are frozen and never shift as later runs arrive.
+// Same-ship only, matching the rest of the app's per-ship comparisons.
+export function metricTendencies(capture, captures) {
+  const run = normalizeCapture(capture)
+  const asOf = new Date(capture.capturedAt).getTime()
+  const entryWeek = weekStart(capture.capturedAt)
+  const sameShip = captures
+    .map(normalizeCapture)
+    .filter((item) => item.ship === run.ship && new Date(item.capturedAt).getTime() <= asOf)
+  const tendencies = new Map()
+  for (const metric of RUN_METRICS) {
+    const bestPerWeek = new Map()
+    for (const item of sameShip) {
+      const value = item[metric.key]
+      if (typeof value !== 'number') continue
+      const wk = weekStart(item.capturedAt)
+      const prev = bestPerWeek.get(wk)
+      if (prev === undefined) bestPerWeek.set(wk, value)
+      else bestPerWeek.set(wk, metric.lowerIsBetter ? Math.min(prev, value) : Math.max(prev, value))
+    }
+    const current = bestPerWeek.get(entryWeek)
+    if (current === undefined) continue
+    const earlierWeeks = [...bestPerWeek.keys()].filter((wk) => wk < entryWeek).sort((a, b) => b - a)
+    if (!earlierWeeks.length) continue
+    const prevBest = bestPerWeek.get(earlierWeeks[0])
+    const improved = metric.lowerIsBetter ? current < prevBest : current > prevBest
+    const worsened = metric.lowerIsBetter ? current > prevBest : current < prevBest
+    if (improved) tendencies.set(metric.key, 'up')
+    else if (worsened) tendencies.set(metric.key, 'down')
+  }
+  return tendencies
+}
+
 // Which of this run's metrics are the CURRENT record — compared against every
 // other run, not just earlier ones, so a badge disappears the moment a later
 // run beats it instead of staying stuck on a run that's no longer the best.

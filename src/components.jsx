@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { BarChart3, ChevronLeft, ChevronRight, Crosshair, Download, Layers, Loader2, Orbit, RefreshCw, Settings } from 'lucide-react'
 import { dateTime, duration, number, score } from './lib.js'
-import { bestRunForMetric, captureScoreSeries, captureSummary, COMPOSITION_SERIES, DECK_COUNT, DECKS, newBestMetrics, normalizeCapture, RUN_METRICS, runAnalytics, SHIPS, zoomToWindowMs } from './runData.js'
+import { bestRunForMetric, captureScoreSeries, captureSummary, COMPOSITION_SERIES, DECK_COUNT, DECKS, metricTendencies, newBestMetrics, normalizeCapture, RUN_METRICS, runAnalytics, SHIPS, zoomToWindowMs } from './runData.js'
 
 function useMeasure(fallback = { width: 300, height: 120 }) {
   const ref = useRef(null)
@@ -113,6 +113,7 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
   const isInspecting = Boolean(inspected) && inspected.id !== captures[0]?.id
   const run = normalizeCapture(capture)
   const bests = newBestMetrics(capture, captures)
+  const tendencies = metricTendencies(capture, captures)
   const statsMetrics = RUN_METRICS.filter((metric) => metric.key !== 'score' && metric.group !== 'breakdown')
   const breakdownMetrics = RUN_METRICS.filter((metric) => metric.group === 'breakdown')
   const isFresh = capture.id === freshId && !isInspecting
@@ -131,7 +132,7 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
       </>) : undefined}
       onMouseLeave={bestRun ? tipHandlers.hide : undefined}
       onClick={hoverable ? () => onSelectRun(bestRun.id) : undefined}>
-      <span>{metric.label}</span>
+      <span>{tendencies.get(metric.key) ? <i className={`tendency ${tendencies.get(metric.key)}`}>{tendencies.get(metric.key) === 'up' ? '↗' : '↘'}</i> : null}{metric.label}</span>
       <strong className={String(text).length > 9 ? 'dense' : ''}>{text}</strong>
       {bests.has(metric.key) ? <em className="best-badge">BEST</em> : null}
     </div>

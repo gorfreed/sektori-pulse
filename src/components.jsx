@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { BarChart3, ChevronLeft, ChevronRight, Crosshair, Download, Layers, Loader2, Orbit, RefreshCw, Settings } from 'lucide-react'
 import { dateTime, duration, number, score } from './lib.js'
 import { bestRunForMetric, captureScoreSeries, captureSummary, COMPOSITION_SERIES, DECK_COUNT, DECKS, newBestMetrics, normalizeCapture, RUN_METRICS, runAnalytics, SHIPS, zoomToWindowMs } from './runData.js'
@@ -308,8 +308,27 @@ function useChartTooltip() {
 }
 
 function ChartTooltip({ tip }) {
+  const ref = useRef(null)
+  // Default is bottom-right of the cursor; flip to the left/top side whenever
+  // that would run the box past the window edge, so tooltips near the right
+  // border (e.g. the latest run's dot) or the bottom never get clipped.
+  const [flip, setFlip] = useState({ x: false, y: false })
+  useLayoutEffect(() => {
+    if (!tip || !ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const GAP = 14
+    setFlip({
+      x: tip.x + GAP + rect.width > window.innerWidth,
+      y: tip.y + GAP + rect.height > window.innerHeight,
+    })
+  }, [tip])
   if (!tip) return null
-  return <div className="chart-tooltip" style={{ left: tip.x, top: tip.y }}>{tip.content}</div>
+  const style = {
+    left: tip.x,
+    top: tip.y,
+    transform: `translate(${flip.x ? `calc(-100% - 14px)` : '14px'}, ${flip.y ? `calc(-100% - 14px)` : '14px'})`,
+  }
+  return <div ref={ref} className="chart-tooltip" style={style}>{tip.content}</div>
 }
 
 export function ScoreChart({ captures = [], zoom: zoomProp, onZoomChange, onSelectRun }) {

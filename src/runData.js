@@ -138,49 +138,51 @@ export const DECKS = [
 ]
 export const DECK_COUNT = 8
 
-// Monday-00:00 (local) week start, used to group runs into weeks.
-function weekStart(dateValue) {
-  const d = new Date(dateValue)
-  d.setHours(0, 0, 0, 0)
-  const day = (d.getDay() + 6) % 7 // Mon=0 .. Sun=6
-  d.setDate(d.getDate() - day)
-  return d.getTime()
+function median(values) {
+  if (!values.length) return null
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
 }
 
-// Per-metric week-over-week tendency for a run entry: an up/down arrow saying
-// whether this metric is trending up or down. Computed from weekly bests —
-// the best value of each week, not individual runs — comparing the entry's
-// own week (as of the entry) against the most recent earlier week that has
-// data. Only runs up to and including this entry's timestamp count, so once a
-// run is recorded its arrows are frozen and never shift as later runs arrive.
-// Same-ship only, matching the rest of the app's per-ship comparisons.
+// How many recent same-ship runs form the baseline a run is judged against,
+// the minimum needed before an arrow is meaningful, and the ±band around the
+// baseline that counts as "flat" (no arrow).
+const TENDENCY_WINDOW = 10
+const TENDENCY_MIN = 3
+const TENDENCY_DEADBAND = 0.05
+
+// Per-metric tendency for a run entry: an up/down arrow saying whether this
+// run was above or below the player's recent form for that metric. The
+// baseline is the MEDIAN of the last few same-ship runs before this one —
+// median (not best or mean) so a couple of fail runs in the window barely
+// move it. Strictly backward-looking, so an entry's arrows never shift as
+// later runs arrive; and because this is recomputed live from the current
+// capture list every render, deleting a run drops it out of every later
+// entry's baseline and the arrows recalculate automatically.
 export function metricTendencies(capture, captures) {
   const run = normalizeCapture(capture)
   const asOf = new Date(capture.capturedAt).getTime()
-  const entryWeek = weekStart(capture.capturedAt)
-  const sameShip = captures
+  const priorSameShip = captures
     .map(normalizeCapture)
-    .filter((item) => item.ship === run.ship && new Date(item.capturedAt).getTime() <= asOf)
+    .filter((item) => item.ship === run.ship && new Date(item.capturedAt).getTime() < asOf)
+    .sort((a, b) => new Date(b.capturedAt) - new Date(a.capturedAt))
   const tendencies = new Map()
   for (const metric of RUN_METRICS) {
-    const bestPerWeek = new Map()
-    for (const item of sameShip) {
-      const value = item[metric.key]
-      if (typeof value !== 'number') continue
-      const wk = weekStart(item.capturedAt)
-      const prev = bestPerWeek.get(wk)
-      if (prev === undefined) bestPerWeek.set(wk, value)
-      else bestPerWeek.set(wk, metric.lowerIsBetter ? Math.min(prev, value) : Math.max(prev, value))
+    const value = run[metric.key]
+    if (typeof value !== 'number') continue
+    const window = []
+    for (const item of priorSameShip) {
+      const v = item[metric.key]
+      if (typeof v === 'number') window.push(v)
+      if (window.length === TENDENCY_WINDOW) break
     }
-    const current = bestPerWeek.get(entryWeek)
-    if (current === undefined) continue
-    const earlierWeeks = [...bestPerWeek.keys()].filter((wk) => wk < entryWeek).sort((a, b) => b - a)
-    if (!earlierWeeks.length) continue
-    const prevBest = bestPerWeek.get(earlierWeeks[0])
-    const improved = metric.lowerIsBetter ? current < prevBest : current > prevBest
-    const worsened = metric.lowerIsBetter ? current > prevBest : current < prevBest
-    if (improved) tendencies.set(metric.key, 'up')
-    else if (worsened) tendencies.set(metric.key, 'down')
+    if (window.length < TENDENCY_MIN) continue
+    const baseline = median(window)
+    const scale = Math.abs(baseline) || 1
+    if (Math.abs(value - baseline) / scale < TENDENCY_DEADBAND) continue
+    const better = metric.lowerIsBetter ? value < baseline : value > baseline
+    tendencies.set(metric.key, better ? 'up' : 'down')
   }
   return tendencies
 }

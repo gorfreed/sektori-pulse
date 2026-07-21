@@ -520,7 +520,7 @@ export function CompositionChart({ analytics }) {
 // Ships play too differently to share one "personal best" — the active ship
 // filter is global (set from the topbar's own selector) and scopes every
 // panel on the dashboard, including this one — `captures` arrives pre-filtered.
-export function FormPanel({ captures, shipFilter }) {
+export function FormPanel({ captures, shipFilter, onSelectRun }) {
   const analytics = runAnalytics(captures)
   const summary = captureSummary(captures)
   const bestRun = summary.runs.find((run) => run.score === summary.bestScore && run.score > 0)
@@ -529,8 +529,9 @@ export function FormPanel({ captures, shipFilter }) {
     { label: 'KILLS / MIN', metricKey: 'killsPerMin', color: '#ff3154', format: (v) => v.toFixed(1), hint: 'Enemies destroyed ÷ run length in minutes, per run.' },
     { label: 'SURVIVAL', metricKey: 'survivalSec', color: '#2ce7ef', format: (v) => duration(v), hint: 'Run length, from the captured results-screen time.' },
   ]
+  const clickable = Boolean(bestRun && onSelectRun)
   return <Section title="FORM" className="form-panel">
-    <div className="form-best"><span>{shipFilter.toUpperCase()} BEST</span><strong>{score(summary.bestScore)}</strong><em>{bestRun ? `${dateTime(bestRun.capturedAt)} · W ${bestRun.worldSequence || '—'}` : 'NO RUNS YET'}</em></div>
+    <button className={`form-best${clickable ? ' clickable' : ''}`} onClick={clickable ? () => onSelectRun(bestRun.id) : undefined}><span>{shipFilter.toUpperCase()} BEST</span><strong>{score(summary.bestScore)}</strong><em>{bestRun ? `${dateTime(bestRun.capturedAt)} · W ${bestRun.worldSequence || '—'}` : 'NO RUNS YET'}</em></button>
     {rows.map((row) => <FormRow key={row.metricKey} analytics={analytics} {...row} />)}
   </Section>
 }

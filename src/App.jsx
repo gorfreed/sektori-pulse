@@ -133,7 +133,7 @@ function Campaign({ data, captures, freshId, deleteRun, setDecks, inspected, set
     if (inspected?.id === id) setInspected(updated.find((item) => item.id === id) || null)
   }
   return <div className="ocr-overview-grid">
-    <FormPanel captures={captures} shipFilter={shipFilter} />
+    <FormPanel captures={captures} shipFilter={shipFilter} onSelectRun={onSelectRun} />
     <ScoreChart history={data.history} captures={captures} onSelectRun={onSelectRun} />
     <RunCaptureFeed captures={captures} onSelect={setInspected} freshId={freshId} selectedId={(inspected || captures[0])?.id ?? null} compactRows />
     <LatestRunPanel captures={captures} inspected={inspected} freshId={freshId} onClear={() => setInspected(null)} onDelete={async (id) => { await deleteRun(id); setInspected(null) }} onSelectRun={onSelectRun} onSetDecks={onSetDecks} />

@@ -34,11 +34,20 @@ function isCompletedRun(worldSequence) {
 // "5,034,170" as "34,170") looks arithmetically identical — "sum minus a
 // clean number of millions" — but sheds whole digits. Only trust the OCR
 // score as-is if it isn't that kind of truncation.
+// Largest gap still explainable as real continue penalties; keep in sync with
+// MAX_CONTINUE_PENALTY in electron/parseRunScreens.cjs.
+const MAX_CONTINUE_PENALTY = 3000000
+
 function scoreLooksTruncated(ocrScore, breakdownScore) {
   if (breakdownScore <= 0) return false
   const penalty = breakdownScore - ocrScore
-  if (penalty < 0 || penalty % 1000000 !== 0 || penalty > 10000000) return false
-  return String(breakdownScore).length - String(ocrScore).length > 1
+  if (penalty <= 0 || penalty % 1000000 !== 0) return false
+  // Two misread signatures, both indistinguishable from continue penalties by
+  // arithmetic alone: losing whole leading digits ("5,034,170" as "34,170"),
+  // or a single leading digit read wrong ("8,042,480" as "1,042,480", a clean
+  // 7,000,000 gap at the same digit count). Beyond a few continues' worth,
+  // the six-component sum is the more trustworthy reading.
+  return String(breakdownScore).length - String(ocrScore).length > 1 || penalty > MAX_CONTINUE_PENALTY
 }
 
 export function normalizeCapture(capture) {

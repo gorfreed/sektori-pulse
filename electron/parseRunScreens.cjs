@@ -25,9 +25,12 @@ function cleanValue(raw) {
 
 function toNumber(raw) {
   const trimmed = cleanValue(raw)
-  // OCR sometimes drops the trailing "s" of "0m 23s" (crop edge / low
-  // confidence), so treat the unit as optional.
-  const durationMatch = trimmed.match(/^(\d+)m\s*(\d+(?:\.\d+)?)s?\b/i)
+  // OCR mangles the seconds unit of "39m 4s" in several ways: dropping the
+  // "s" entirely, or inserting junk before it ("39m 4bs"). Once "<digits>m"
+  // has matched, a following number is unambiguously the seconds, so don't
+  // require the unit at all — demanding it made "39m 4bs" fall through to the
+  // bare-number branch and silently record a 39-second run instead of 39m04s.
+  const durationMatch = trimmed.match(/^(\d+)\s*m\s*(\d+(?:\.\d+)?)/i)
   if (durationMatch) return Number(durationMatch[1]) * 60 + Number(durationMatch[2])
   const fractionMatch = trimmed.match(/\d+\s*\/\s*\d+/)
   if (fractionMatch) return null
@@ -130,6 +133,12 @@ function parsePages(pages) {
 
 const BREAKDOWN_KEYS = ['enemies', 'bosses', 'scoreTokens', 'chain', 'pads', 'other']
 
+// Largest score gap we'll still explain as real continue/redemption penalties
+// (-1,000,000 each) rather than as an OCR misread of the score. Set this to
+// the most continues a single run can actually accumulate; anything past that
+// and the six-component breakdown sum is trusted over the score reading.
+const MAX_CONTINUE_PENALTY = 3000000
+
 function breakdownSum(fields) {
   if (!BREAKDOWN_KEYS.every((key) => typeof fields[key] === 'number')) return null
   return BREAKDOWN_KEYS.reduce((total, key) => total + fields[key], 0)
@@ -154,30 +163,45 @@ function reconcileBreakdown(hard, soft) {
   // 7,369,320). The displayed score is authoritative; a match is a sum equal
   // to a score candidate plus a small whole number of millions.
   //
-  // That penalty check alone can't tell a real multi-continue run apart from
-  // OCR dropping the score's leading digit group entirely (e.g. reading
-  // "5,034,170" as "34,170") — both look like "sum minus a clean number of
-  // millions". A genuine per-continue penalty knocks the number down by a
-  // few million without changing its digit count; losing whole leading
-  // digits does. Reject any match that would require the target to have
-  // shed more than one digit's worth of magnitude versus the breakdown sum.
-  const matchesTarget = (sum) => targets.find((target) => {
-    const penalty = sum - target
-    if (penalty < 0 || penalty % 1000000 !== 0 || penalty > 10000000) return false
-    return String(sum).length - String(target).length <= 1
-  })
+  // Danger: a misread of the score's LEADING digit is arithmetically
+  // identical to a stack of continue-penalties. Reading 8,042,480 as
+  // 1,042,480 leaves a difference of exactly 7,000,000 — a clean multiple of
+  // a million, same digit count, identical trailing digits — so no amount of
+  // arithmetic can tell it apart from "7 continues". Two guards, since the
+  // six-component sum (six readings that must agree) is far more trustworthy
+  // than the one reading of the big glowing score:
+  //   1. Prefer the interpretation needing the SMALLEST penalty, so an exact
+  //      zero-penalty match always beats a penalised one.
+  //   2. Refuse penalties beyond what a real run can accumulate; past that,
+  //      a misread is the likelier explanation, and we fall back to the sum.
+  const matchesTarget = (sum) => {
+    let best = null
+    for (const target of targets) {
+      const penalty = sum - target
+      if (penalty < 0 || penalty % 1000000 !== 0 || penalty > MAX_CONTINUE_PENALTY) continue
+      if (String(sum).length - String(target).length > 1) continue
+      if (best === null || penalty < best.penalty) best = { target, penalty }
+    }
+    return best
+  }
   const combo = []
+  let bestMatch = null
   const search = (index, sum) => {
-    if (index === BREAKDOWN_KEYS.length) return matchesTarget(sum) ?? null
+    if (index === BREAKDOWN_KEYS.length) {
+      const match = matchesTarget(sum)
+      if (match && (bestMatch === null || match.penalty < bestMatch.penalty)) {
+        bestMatch = { score: match.target, penalty: match.penalty, values: [...combo] }
+      }
+      return null
+    }
     for (const value of options[index]) {
       combo[index] = value
-      const matched = search(index + 1, sum + value)
-      if (matched !== null) return matched
+      search(index + 1, sum + value)
     }
     return null
   }
-  const score = search(0, 0)
-  return score === null ? null : { values: [...combo], score }
+  search(0, 0)
+  return bestMatch === null ? null : { values: bestMatch.values, score: bestMatch.score }
 }
 
 // Reconcile the hard-contrast parse (reliable glowing score digits, misreads

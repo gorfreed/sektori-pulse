@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.3
+
+- Tag each run with the eight decks you played, since the game records that nowhere. Deck picker styled after the game's own deck-select screen; tagged decks show on the run detail.
+- Per-metric tendency arrows: each run shows whether a metric was above or below your recent form, judged against the median of your last several runs so a few fails don't skew it. Arrows recalculate if you delete a run.
+- Completed campaign runs (reaching world 6) get a gold frame in the run list and a star in the detail view.
+- Score progression chart now connects each day's best run, so improving day over day reads as a rising curve instead of fail-runs dragging it into zigzag.
+- The FORM panel's best-score block and each metric's best-run link open the respective run.
+- Hover tooltips flip away from the window edge instead of getting clipped.
+- Fixed the app surviving invisibly in the background after closing the dashboard (the overlay kept it alive), which blocked relaunch.
+- Fixed two OCR failures: a leading-digit score misread that passed the checksum as fake continue-penalties, and a mangled run time being stored as seconds.
+- Only Campaign runs are captured; other game modes (Classic, etc.) no longer record garbage.
+- Optional: launch Pulse automatically with the game via a one-line Steam launch option (see README).
+
 ## 2026-07-09 14:13
 
 - Request: Die Previews und Next-Buttons müssen vertauscht werden. Sie müssen genau auf der jeweils anderen Seite sein.

@@ -18,8 +18,18 @@ Pulse runs alongside Sektori and picks up the moment a run ends.
 - Reads every stat off the screen with on-device OCR, cross-checked against the score breakdown so misreads get caught before they end up in your history.
 - Builds a run archive you can scroll, filter by ship, and drill into. Click any point on a chart, or any "best" stat, and it jumps straight to the run that set it.
 - Tracks personal bests per stat, per ship. Redeemer, Defier and Sentinel play too differently to share one leaderboard, so each gets its own.
+- Marks completed campaign runs (reaching world 6) with a gold frame in the run list and a star in the detail view.
+- Shows a per-metric tendency arrow on each run: whether that run was above or below your recent form, judged against the median of your last several runs so a couple of fails don't skew it.
+- Charts your progress by connecting each day's best run, so improving day over day reads as a rising curve instead of fail-runs dragging everything into zigzag.
+- Lets you tag each run with the eight decks you took into it, since the game records that nowhere. See at a glance which deck combinations you actually perform with.
 - Shows trends over time: score/minute, kills/minute, survival time, score composition, with an adjustable time window instead of one flat wall of numbers.
 - A subtle in-game overlay so you know Pulse is watching, without it fighting for your attention while you play.
+
+Playing on Steam, you can have Pulse launch automatically with the game. Right-click Sektori in Steam, Properties, and set Launch Options to:
+
+```
+cmd /c start "" "C:\Program Files\Sektori Pulse\Sektori Pulse.exe" & %command%
+```
 
 Pulse reads the Sektori save file without ever modifying it. Nothing leaves your machine.
 

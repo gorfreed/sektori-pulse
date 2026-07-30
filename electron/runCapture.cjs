@@ -23,6 +23,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 // just recompiling the C# interop layer on every single check/screenshot.
 const screenshot = (outFile, processName) => psSession.send({ action: 'screenshot', processName, outFile })
 const checkGameStatus = (processName = 'Sektori') => psSession.send({ action: 'check', processName })
+const focusGame = (processName = 'Sektori') => psSession.send({ action: 'focus', processName })
 
 async function isGameForeground(processName) {
   const status = await checkGameStatus(processName)
@@ -212,4 +213,4 @@ async function tryCapture({ userDataDir, processName = 'Sektori', ship = null, o
   return record
 }
 
-module.exports = { tryCapture, listRecords, updateRecord, deleteRecord, capturesDir, recordsPath, checkGameStatus }
+module.exports = { tryCapture, listRecords, updateRecord, deleteRecord, capturesDir, recordsPath, checkGameStatus, focusGame }

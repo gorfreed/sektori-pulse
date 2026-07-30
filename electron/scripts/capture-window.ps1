@@ -1,5 +1,5 @@
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('screenshot', 'key', 'check', 'capture-sequence', 'serve')][string]$Action,
+  [Parameter(Mandatory = $true)][ValidateSet('screenshot', 'key', 'check', 'focus', 'capture-sequence', 'serve')][string]$Action,
   [string]$ProcessName = 'Sektori',
   [string]$OutFile,
   [string]$OutDir,
@@ -50,6 +50,11 @@ public class SektoriPulseWin32 {
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
   [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
   [DllImport("user32.dll", SetLastError = true)] public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+  [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr lpdwProcessId);
+  [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
   public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 }
 "@
@@ -60,6 +65,25 @@ function Write-Result($obj) {
   # line-based IPC loop (serve mode) — write straight to the console stream.
   [Console]::Out.WriteLine(($obj | ConvertTo-Json -Compress -Depth 6))
   [Console]::Out.Flush()
+}
+
+# Bring the game window to the foreground. Windows blocks a background process
+# from stealing focus outright, so briefly attach our input thread to the
+# game window's thread — that lifts the restriction for this call. Only used
+# for a user-initiated manual re-capture, never automatically.
+function Get-FocusResult($processName) {
+  $proc = Get-Process -Name $processName -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+  if (-not $proc) { return @{ ok = $false; reason = 'process-not-found' } }
+  $hwnd = $proc.MainWindowHandle
+  [SektoriPulseWin32]::ShowWindow($hwnd, 9) | Out-Null # SW_RESTORE
+  $target = [SektoriPulseWin32]::GetWindowThreadProcessId($hwnd, [IntPtr]::Zero)
+  $current = [SektoriPulseWin32]::GetCurrentThreadId()
+  [SektoriPulseWin32]::AttachThreadInput($current, $target, $true) | Out-Null
+  $ok = [SektoriPulseWin32]::SetForegroundWindow($hwnd)
+  [SektoriPulseWin32]::AttachThreadInput($current, $target, $false) | Out-Null
+  Start-Sleep -Milliseconds 250
+  $nowForeground = ([SektoriPulseWin32]::GetForegroundWindow() -eq $hwnd)
+  return @{ ok = [bool]$nowForeground }
 }
 
 function Get-CheckResult($processName) {
@@ -146,6 +170,11 @@ if ($Action -eq 'check') {
   exit 0
 }
 
+if ($Action -eq 'focus') {
+  Write-Result (Get-FocusResult $ProcessName)
+  exit 0
+}
+
 if ($Action -eq 'screenshot') {
   Write-Result (Get-ScreenshotResult $ProcessName $OutFile)
   exit 0
@@ -177,6 +206,7 @@ if ($Action -eq 'serve') {
       'check' { Write-Result (Get-CheckResult $cmd.processName) }
       'screenshot' { Write-Result (Get-ScreenshotResult $cmd.processName $cmd.outFile) }
       'key' { Write-Result (Get-KeyResult $cmd.processName $cmd.key) }
+      'focus' { Write-Result (Get-FocusResult $cmd.processName) }
       default { Write-Result @{ ok = $false; reason = 'unknown-action' } }
     }
   }

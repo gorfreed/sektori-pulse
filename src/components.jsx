@@ -94,9 +94,11 @@ export function DeleteRunButton({ onDelete, compact = false }) {
   </button>
 }
 
-export function LatestRunPanel({ captures, inspected, freshId = null, onClear, onDelete, onSelectRun, onSetDecks }) {
+export function LatestRunPanel({ captures, inspected, freshId = null, onClear, onDelete, onSelectRun, onSetDecks, onRecapture }) {
   const [tip, tipHandlers] = useChartTooltip()
   const [editingDecks, setEditingDecks] = useState(false)
+  const [recapturing, setRecapturing] = useState(false)
+  const [recaptureNote, setRecaptureNote] = useState('')
   const capture = inspected || captures[0]
   // Close the deck editor when the displayed run changes, without an effect
   // (which would cause an extra render) — bail out during render instead.
@@ -143,6 +145,16 @@ export function LatestRunPanel({ captures, inspected, freshId = null, onClear, o
       <strong>{run.completed ? <i className="completed-star" title="Campaign completed">★</i> : null}{score(run.score || 0)}</strong>
       {bests.has('score') ? <em className="best-badge">NEW BEST</em> : null}
     </div>
+    {onRecapture && !isInspecting && (run.pageCount || 0) > 0 && run.pageCount < 4 ? <div className="partial-capture">
+      <span>Only the score page was captured — the detailed pages were missed (you likely tabbed away). With the results screen still open in the game, re-capture to grab all four.</span>
+      <button className="deck-save" disabled={recapturing} onClick={async () => {
+        setRecapturing(true); setRecaptureNote('')
+        const result = await onRecapture(capture.id)
+        setRecapturing(false)
+        if (!result?.ok) setRecaptureNote(result?.reason === 'no-results-screen' ? 'No results screen found — open it in the game and try again.' : result?.reason === 'focus-failed' ? 'Could not bring the game forward — click the game once, then retry.' : 'Re-capture failed. Make sure the results screen is open.')
+      }}>{recapturing ? 'RE-CAPTURING…' : 'RE-CAPTURE'}</button>
+      {recaptureNote ? <em>{recaptureNote}</em> : null}
+    </div> : null}
     <div className="latest-run-rows">
       {statsMetrics.map((metric, index) => metricRow(metric, index))}
       <div className="latest-run-subhead"><span>SCORE BREAKDOWN</span><i /></div>

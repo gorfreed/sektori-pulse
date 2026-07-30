@@ -113,6 +113,7 @@ app.whenReady().then(() => {
   ipcMain.handle('pulse:get-run-captures', () => runCapture.listRecords(app.getPath('userData')))
   ipcMain.handle('pulse:get-game-status', () => ({ running: gameRunning }))
   ipcMain.handle('pulse:delete-run', (_event, id) => runCapture.deleteRecord(app.getPath('userData'), id))
+  ipcMain.handle('pulse:recapture', (_event, replaceId) => manualRecapture(replaceId))
   ipcMain.handle('pulse:update-run-decks', (_event, id, decks) => runCapture.updateRecord(app.getPath('userData'), id, { decks }))
   ipcMain.handle('pulse:choose-save', async () => {
     const choice = await dialog.showOpenDialog(window, { title: 'Locate Sektori savegame.json', properties: ['openFile'], filters: [{ name: 'Sektori save', extensions: ['json'] }] })
@@ -172,10 +173,10 @@ function updateLastStartedMode() {
 }
 
 function attemptRunCapture() {
-  if (captureBusy) return
+  if (captureBusy) return Promise.resolve(null)
   captureBusy = true
   pendingCaptureOnFocus = false
-  runCapture.tryCapture({
+  return runCapture.tryCapture({
     userDataDir: app.getPath('userData'),
     processName: GAME_PROCESS_NAME,
     ship: readSelectedShip(),
@@ -187,13 +188,34 @@ function attemptRunCapture() {
       sendToDashboard('pulse:capture-progress', event)
     },
   })
-    .then((record) => { if (record) sendToDashboard('pulse:run-captured', record) })
+    .then((record) => { if (record) sendToDashboard('pulse:run-captured', record); return record })
     .catch((error) => {
       console.error('[sektori-pulse] run capture failed', error)
       overlay.setPhase('error')
       sendToDashboard('pulse:capture-progress', { phase: 'error' })
+      return null
     })
     .finally(() => { captureBusy = false })
+}
+
+// User-initiated re-capture: the automatic capture skips pages 2-4 if the game
+// isn't foreground during paging (e.g. the player tabbed away right after the
+// run). Since the player asked for this one, bringing the game to the front is
+// expected here, unlike the automatic path. Deletes the partial record it
+// replaces once a fuller capture succeeds.
+async function manualRecapture(replaceId) {
+  const focus = await runCapture.focusGame(GAME_PROCESS_NAME)
+  if (!focus || !focus.ok) {
+    console.log('[sektori-pulse] recapture: could not bring the game to the foreground')
+    return { ok: false, reason: 'focus-failed' }
+  }
+  await new Promise((resolve) => setTimeout(resolve, 400))
+  const record = await attemptRunCapture()
+  if (!record) return { ok: false, reason: 'no-results-screen' }
+  if (replaceId && replaceId !== record.id && (record.pageCount || 0) > 1) {
+    runCapture.deleteRecord(app.getPath('userData'), replaceId)
+  }
+  return { ok: true, record }
 }
 
 function queueCaptureUntilForeground() {

@@ -76,6 +76,10 @@
 .run-row.completed{box-shadow:inset 0 0 0 1px var(--yellow)}
 .run-row.completed.selected{box-shadow:inset 0 0 0 1px var(--yellow),inset 3px 0 var(--red)}
 .completed-star{font-style:normal;color:var(--yellow);margin-right:8px;text-shadow:0 0 8px rgba(255,220,46,.6)}
+.partial-capture{margin:0 14px 8px;padding:10px 12px;border:1px solid #5c521a;background:rgba(255,220,46,.07);display:flex;flex-direction:column;gap:8px}
+.partial-capture span{font:11px 'Barlow Condensed';color:#c9bd86;line-height:1.35}
+.partial-capture .deck-save{align-self:flex-start}
+.partial-capture em{font:10px Oxanium;font-style:normal;color:var(--red)}
 /* Week-over-week tendency arrow shown before a detail metric's label. */
 .tendency{font-style:normal;font-size:11px;margin-right:5px;line-height:1}
 .tendency.up{color:var(--green)}

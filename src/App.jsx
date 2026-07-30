@@ -31,7 +31,16 @@ function useRunCaptures() {
     setCaptures(updated)
     return updated
   }
-  return { captures, freshId, deleteRun, setDecks }
+  // Re-capture the results screen currently open in the game (recovers a run
+  // whose pages 2-4 were missed). The new record arrives via onRunCaptured,
+  // and the replaced partial is dropped by the main process, so just refresh.
+  const recapture = async (replaceId) => {
+    if (!window.pulse?.recapture) return { ok: false, reason: 'unavailable' }
+    const result = await window.pulse.recapture(replaceId)
+    if (window.pulse.getRunCaptures) window.pulse.getRunCaptures().then(setCaptures).catch(() => {})
+    return result
+  }
+  return { captures, freshId, deleteRun, setDecks, recapture }
 }
 
 // Tracks whether a capture is mid-flight (screenshots taken, background OCR
@@ -92,7 +101,7 @@ export default function App() {
   const [inspected, setInspected] = useState(null)
   const [shipFilter, setShipFilter] = useState(SHIPS[0])
   const { data, refreshing, refresh, chooseSave, error, isDesktop } = useDashboard()
-  const { captures: allCaptures, freshId, deleteRun, setDecks } = useRunCaptures()
+  const { captures: allCaptures, freshId, deleteRun, setDecks, recapture } = useRunCaptures()
   const capturePending = useCaptureProgress()
   const gameRunning = useGameStatus()
   // The ship filter is global: every panel on the dashboard — best/average/
@@ -114,7 +123,7 @@ export default function App() {
   return <div className="app-shell">
     <Topbar page={page} setPage={setPage} isDesktop={isDesktop} gameRunning={gameRunning} refreshing={refreshing} onRefresh={refresh} onExport={exportData} shipFilter={shipFilter} setShipFilter={setShipFilter} capturePending={capturePending} />
     <main>{error ? <div className="error-bar">SAVE LINK LOST — {error} <button onClick={chooseSave}>LOCATE SAVE</button></div> : null}
-      <Page page={page} data={data} captures={captures} shipFilter={shipFilter} freshId={freshId} deleteRun={deleteRun} setDecks={setDecks} chooseSave={chooseSave} isDesktop={isDesktop} inspected={inspected} setInspected={setInspected} onSelectRun={onSelectRun} />
+      <Page page={page} data={data} captures={captures} shipFilter={shipFilter} freshId={freshId} deleteRun={deleteRun} setDecks={setDecks} recapture={recapture} chooseSave={chooseSave} isDesktop={isDesktop} inspected={inspected} setInspected={setInspected} onSelectRun={onSelectRun} />
     </main>
   </div>
 }
@@ -125,7 +134,7 @@ function Page({ page, ...props }) {
   return <SettingsPage {...props} />
 }
 
-function Campaign({ data, captures, freshId, deleteRun, setDecks, inspected, setInspected, onSelectRun, shipFilter }) {
+function Campaign({ data, captures, freshId, deleteRun, setDecks, recapture, inspected, setInspected, onSelectRun, shipFilter }) {
   // Keeps the panel showing this run's freshly saved decks immediately,
   // instead of the stale pre-save object `inspected` still points at.
   const onSetDecks = async (id, decks) => {
@@ -136,7 +145,7 @@ function Campaign({ data, captures, freshId, deleteRun, setDecks, inspected, set
     <FormPanel captures={captures} shipFilter={shipFilter} onSelectRun={onSelectRun} />
     <ScoreChart history={data.history} captures={captures} onSelectRun={onSelectRun} />
     <RunCaptureFeed captures={captures} onSelect={setInspected} freshId={freshId} selectedId={(inspected || captures[0])?.id ?? null} compactRows />
-    <LatestRunPanel captures={captures} inspected={inspected} freshId={freshId} onClear={() => setInspected(null)} onDelete={async (id) => { await deleteRun(id); setInspected(null) }} onSelectRun={onSelectRun} onSetDecks={onSetDecks} />
+    <LatestRunPanel captures={captures} inspected={inspected} freshId={freshId} onClear={() => setInspected(null)} onDelete={async (id) => { await deleteRun(id); setInspected(null) }} onSelectRun={onSelectRun} onSetDecks={onSetDecks} onRecapture={recapture} />
   </div>
 }
 

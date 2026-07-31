@@ -28,8 +28,10 @@ Pulse runs alongside Sektori and picks up the moment a run ends.
 Playing on Steam, you can have Pulse launch automatically with the game. Right-click Sektori in Steam, Properties, and set Launch Options to:
 
 ```
-cmd /c start "" "C:\Program Files\Sektori Pulse\Sektori Pulse.exe" & %command%
+"C:\Program Files\Sektori Pulse\Sektori Pulse.exe" %command%
 ```
+
+Steam then starts Pulse, which launches the game itself and starts watching. Nothing runs when you are not playing, and no console window appears.
 
 Pulse reads the Sektori save file without ever modifying it. Nothing leaves your machine.
 

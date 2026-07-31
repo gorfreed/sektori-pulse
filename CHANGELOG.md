@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- Re-capture button: if an automatic capture only grabbed the score page (you tabbed away before it could page through), the run panel now offers a re-capture that brings the game forward and grabs all four pages, replacing the partial.
+- Steam auto-launch no longer leaves a command window open. The launch option is now just `"C:\Program Files\Sektori Pulse\Sektori Pulse.exe" %command%` (Pulse launches the game itself). Update your existing launch option to the new form.
+
 ## 0.1.3
 
 - Tag each run with the eight decks you played, since the game records that nowhere. Deck picker styled after the game's own deck-select screen; tagged decks show on the run detail.

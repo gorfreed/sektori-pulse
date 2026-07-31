@@ -6,6 +6,7 @@ const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron')
 Menu.setApplicationMenu(null)
 const path = require('node:path')
 const fs = require('node:fs')
+const { spawn } = require('node:child_process')
 const { createStore } = require('./data.cjs')
 const runCapture = require('./runCapture.cjs')
 const overlay = require('./overlay.cjs')
@@ -16,6 +17,31 @@ const GAME_PROCESS_NAME = 'Sektori'
 const GAME_POLL_INTERVAL_MS = 4000
 const SHIP_NAMES = { 0: 'Redeemer', 1: 'Defier', 2: 'Sentinel' }
 const SAVE_MARKER = '###***### +++ ###***###'
+
+// Steam launch-option integration. Set Sektori's launch options to:
+//   "C:\Program Files\Sektori Pulse\Sektori Pulse.exe" %command%
+// and Steam runs Pulse with the game's own command appended, so Pulse starts
+// the game itself (detached, so it outlives us) and then carries on normally.
+// Because Pulse is a plain GUI process, no console window ever appears —
+// unlike the old `cmd /c start ... & %command%` trick, which left an ugly
+// command window open for the whole play session. Done before the
+// single-instance check so the game still launches even if a Pulse window is
+// already open (this launcher instance then just quits).
+function maybeLaunchGameFromArgs() {
+  const args = process.argv.slice(1).filter((arg) => !arg.startsWith('--'))
+  const gameIndex = args.findIndex((arg) => /\.exe$/i.test(arg) && path.isAbsolute(arg) && fs.existsSync(arg))
+  if (gameIndex < 0) return
+  const gameExe = args[gameIndex]
+  if (/sektori pulse\.exe$/i.test(gameExe)) return // never relaunch ourselves
+  try {
+    const child = spawn(gameExe, args.slice(gameIndex + 1), { detached: true, stdio: 'ignore', windowsHide: false })
+    child.unref()
+    console.log('[sektori-pulse] launched game from Steam launch option:', gameExe)
+  } catch (error) {
+    console.error('[sektori-pulse] failed to launch game from launch option', error)
+  }
+}
+maybeLaunchGameFromArgs()
 
 // Without this, two dev-mode launches can both bind the gamepad and fight over
 // the game window's foreground, and both try to write runCaptures.jsonl.
